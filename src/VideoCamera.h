@@ -5,7 +5,6 @@
 
 #include "CameraSettings.h"
 #include "VideoPreview.h"
-#include "VideoEncoder.h"
 
 #define MMAL_CAMERA_PREVIEW_PORT 0
 #define MMAL_CAMERA_VIDEO_PORT 1
@@ -22,10 +21,9 @@ public:
     VideoCamera();
     ~VideoCamera();
     void close();
-    void setup();
+    void setup(int _x, int _y, int _ancho, int _alto);
     
-    void startRecording();
-    void stopRecording();
+
     CameraSettings cameraSettings;
     MMAL_STATUS_T create_camera_component();
 
@@ -39,17 +37,20 @@ public:
     int height;                         /// requested height of image
     int framerate;                      /// Requested frame rate (fps)
 
+    bool ready;
+    bool isReady();
+
     
     //RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
     //RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
     
     MMAL_COMPONENT_T *camera;    /// Pointer to the camera component
-    VideoEncoder videoEncoder;
+
     VideoPreview videoPreview;
     MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera to preview
-    MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
+    //MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
     
-    MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
+    //MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
     
     MMAL_PORT_T* preview_port;
     MMAL_PORT_T* video_port;

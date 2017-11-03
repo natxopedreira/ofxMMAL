@@ -12,7 +12,8 @@ class VideoPreview
 {
 public:
     VideoPreview();
-    MMAL_STATUS_T setup();
+    void videoPosition(int _x, int _y, int _ancho, int _alto);
+    MMAL_STATUS_T setup(int _x, int _y, int _ancho, int _alto);
     bool wantPreview;                       /// Display a preview
     int wantFullScreenPreview;             /// 0 is use previewRect, non-zero to use full screen
     int opacity;                           /// Opacity of window - 0 = transparent, 255 = opaque

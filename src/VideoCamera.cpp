@@ -21,21 +21,21 @@ VideoCamera::VideoCamera()
     
     camera = NULL;
     video_port = NULL;
-    still_port = NULL;
+    //still_port = NULL;
     preview_port = NULL;
     wantPreview = true;
     hasClosed = false;
     hasExitHandler = false;
 
+    ready = false;
+
 }
 
-void VideoCamera::setup()
+void VideoCamera::setup(int _x, int _y, int _ancho, int _alto)
 {
     addExitHandler();
     create_camera_component();
-    MMAL_STATUS_T status = videoPreview.setup();
-    MMAL_TRACE(status);
-    status = videoEncoder.setup();
+    MMAL_STATUS_T status = videoPreview.setup(_x, _y, _ancho, _alto);
     MMAL_TRACE(status);
     //cameraSettings.setup(camera);
     if(wantPreview)
@@ -47,28 +47,8 @@ void VideoCamera::setup()
         MMAL_TRACE(status);
 
     }
-    // Now connect the camera to the encoder
-    status = connect_ports(video_port, 
-                           videoEncoder.getInputPort(), 
-                           &encoder_connection);
-    MMAL_TRACE(status);
-    
-    status =  mmal_port_parameter_set_boolean(video_port, MMAL_PARAMETER_CAPTURE, true);
-    MMAL_TRACE(status);
-    
-    status = videoEncoder.enableOutputPort();
-    MMAL_TRACE(status);
 
-}
-
-void VideoCamera::startRecording()
-{
-    videoEncoder.startRecording();
-}
-void VideoCamera::stopRecording()
-{
-    videoEncoder.stopRecording();
-
+    ready = true;
 }
 
 /**
@@ -134,16 +114,31 @@ MMAL_STATUS_T VideoCamera::create_camera_component()
     status = mmal_port_parameter_set(camera->control, &camera_num.hdr);
     MMAL_TRACE(status);
     
+            
+    
+
    
     
     status = mmal_port_parameter_set_uint32(camera->control, MMAL_PARAMETER_CAMERA_CUSTOM_SENSOR_CONFIG, sensor_mode);
     
     MMAL_TRACE(status);
-    
+
     preview_port = camera->output[MMAL_CAMERA_PREVIEW_PORT];
     video_port = camera->output[MMAL_CAMERA_VIDEO_PORT];
-    still_port = camera->output[MMAL_CAMERA_CAPTURE_PORT];
+
+
+    /// mirror
+    MMAL_PARAMETER_MIRROR_T mirror = {{MMAL_PARAMETER_MIRROR,sizeof(MMAL_PARAMETER_MIRROR_T)},MMAL_PARAM_MIRROR_NONE};
+    mirror.value = MMAL_PARAM_MIRROR_HORIZONTAL;
     
+    status = mmal_port_parameter_set(preview_port, &mirror.hdr);
+    MMAL_TRACE(status);
+
+    status = mmal_port_parameter_set(video_port, &mirror.hdr);
+    MMAL_TRACE(status);
+
+    //still_port = camera->output[MMAL_CAMERA_CAPTURE_PORT];
+    /*
     if (settings)
     {
         MMAL_PARAMETER_CHANGE_EVENT_REQUEST_T change_event_request;
@@ -154,13 +149,14 @@ MMAL_STATUS_T VideoCamera::create_camera_component()
         
         status = mmal_port_parameter_set(camera->control, &change_event_request.hdr);
         MMAL_TRACE(status);
-    }
+    }*/
     
     // Enable the camera, and tell it its control callback function
     status = mmal_port_enable(camera->control, &VideoCamera::camera_control_callback);
     MMAL_TRACE(status);
         
     //  set up the camera configuration
+
     {
         MMAL_PARAMETER_CAMERA_CONFIG_T cam_config;
         cam_config.hdr.id = MMAL_PARAMETER_CAMERA_CONFIG;
@@ -177,14 +173,14 @@ MMAL_STATUS_T VideoCamera::create_camera_component()
         cam_config.use_stc_timestamp = MMAL_PARAM_TIMESTAMP_MODE_RESET_STC;
         mmal_port_parameter_set(camera->control, &cam_config.hdr);
     }
-    
+
     // Now set up the port formats
     
     // Set the encode format on the Preview port
     // HW limitations mean we need the preview to be the same size as the required recorded output
     
     format = preview_port->format;
-    
+
     format->encoding = MMAL_ENCODING_OPAQUE;
     format->encoding_variant = MMAL_ENCODING_I420;
     int shutter_speed = 0; //TODO 
@@ -213,7 +209,7 @@ MMAL_STATUS_T VideoCamera::create_camera_component()
             ofLogVerbose() << "Enable dynamic frame rate to fulfil shutter speed requirement";
         }
     } 
-    
+
     format->encoding = MMAL_ENCODING_OPAQUE;
     format->es->video.width = VCOS_ALIGN_UP(width, 32);
     format->es->video.height = VCOS_ALIGN_UP(height, 16);
@@ -278,7 +274,7 @@ MMAL_STATUS_T VideoCamera::create_camera_component()
     
     
     // Set the encode format on the still  port
-    
+ /*   
     format = still_port->format;
     
     format->encoding = MMAL_ENCODING_OPAQUE;
@@ -296,14 +292,14 @@ MMAL_STATUS_T VideoCamera::create_camera_component()
     status = mmal_port_format_commit(still_port);
     
     MMAL_TRACE(status);
-
+*/
     
-    /* Ensure there are enough buffers to avoid dropping frames */
+    /* Ensure there are enough buffers to avoid dropping frames
     if (still_port->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
     {
         still_port->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
     }
-    
+     */
     /* Enable component */
     status = mmal_component_enable(camera);
      MMAL_TRACE(status);
@@ -321,6 +317,10 @@ VideoCamera::~VideoCamera()
     }
 }   
 
+bool VideoCamera::isReady(){
+	return ready;
+}
+
 void VideoCamera::close()
 {
     MMAL_STATUS_T status;
@@ -331,6 +331,7 @@ void VideoCamera::close()
         camera = NULL;
     }
     hasClosed = true;
+    ready = false;
 }
 
 bool VideoCamera::doExit = false;

@@ -1,17 +1,11 @@
 #include "ofApp.h"
 
-void ofApp::onCharacterReceived(KeyListenerEventData& e)
-{
-	keyPressed((int)e.character);
-}
-
 //--------------------------------------------------------------
 void ofApp::setup(){
-    ofSetLogLevel(OF_LOG_VERBOSE);
+    ofSetLogLevel(OF_LOG_ERROR);
 	ofSetLogLevel("ofThread", OF_LOG_SILENT);
     
-	consoleListener.setup(this);
-    camera.setup();
+    camera.setup(0,0,1280,720);
 }
 
 //--------------------------------------------------------------
@@ -28,14 +22,11 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed  (int key){
+	if(key == 'f'){
+		camera.videoPreview.videoPosition(100,0,1280,720);
+	}else if(key == 'd'){
+		camera.videoPreview.videoPosition(0,0,1280,720);
+	}
 
-	ofLogVerbose() << "keyPressed: " << key;
-	if (key == 'z') 
-	{
-        camera.startRecording();
-    }
-    if (key == 'x') 
-    {
-        camera.stopRecording();
-    }
+    cout << camera.isReady() << endl;
 }

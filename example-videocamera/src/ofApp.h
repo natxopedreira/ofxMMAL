@@ -1,11 +1,10 @@
 #pragma once
 
 #include "ofMain.h"
-#include "TerminalListener.h"
 #include "VideoCamera.h"
 
 
-class ofApp : public ofBaseApp, public KeyListener{
+class ofApp : public ofBaseApp{
 
 	public:
 
@@ -17,8 +16,6 @@ class ofApp : public ofBaseApp, public KeyListener{
 
 	
 		VideoCamera camera;
-        TerminalListener consoleListener;
-        void onCharacterReceived(KeyListenerEventData& e);
     	
 };
 
